@@ -2,8 +2,8 @@
 # Author: Stephen Zhao
 # Package: datetime_matcher
 # Version: v0.1
-# Last modified: 2019-12-21
-# Description: Matches, with datetime formatting and regex support.
+# Last modified: 2020-10-11
+# Description: A library which extends regex with support for datetime format codes.
 
 import argparse
 import calendar
@@ -136,7 +136,10 @@ class DatetimeMatcher:
         df_tokens = list(filter(lambda x: x.kind == 'DATETIME_FORMAT_CODE', tokens))
         datetime_format_codes = []
         datetime_string_values = []
-        for group_key, group_value in re.match(datetime_extractor_regex, text).groupdict().items():
+        match = re.match(datetime_extractor_regex, text)
+        if match is None:
+            return None
+        for group_key, group_value in match.groupdict().items():
             if group_key.startswith('DF___'):
                 try:
                     datetime_group_num = int(group_key[5:])
@@ -168,10 +171,14 @@ class DatetimeMatcher:
         given text with the replacement dfregex, intelligently transferring
         the first matching date from the original text to the replaced text.
 
+        If no matches are found, the original text is returned.
+
         Use strftime codes within a dfregex string to extract/place datetimes.
         """
         search_regex = self.get_regex_from_dfregex(search_dfregex)
         dt = self.extract_datetime(search_dfregex, text)
+        if dt is None:
+            return text
         subbed_text_with_df_codes = re.sub(search_regex, replacement_dfregex, text)
         return dt.strftime(subbed_text_with_df_codes)
     

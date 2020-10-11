@@ -1,5 +1,9 @@
 # datetime_matcher
 
+![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/datetime-matcher)
+![PyPI - License](https://img.shields.io/pypi/l/datetime-matcher)
+
 A python module that works with an extension of regex which allows formatted
 datetime strings using python/C-style strftime format codes, hereby dubbed 
 "dfregex" (read datetime format regex).

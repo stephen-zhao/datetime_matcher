@@ -131,18 +131,18 @@ class DatetimeMatcher:
 
         Use strftime codes within a dfregex string to match datetimes.
         """
-        tokens = self.tokenize_dfregex(dfregex)
+        tokens = list(self.tokenize_dfregex(dfregex))
         datetime_extractor_regex = self.parse_dfregex_tokens(tokens, True)
         df_tokens = list(filter(lambda x: x.kind == 'DATETIME_FORMAT_CODE', tokens))
         datetime_format_codes = []
         datetime_string_values = []
-        for group_key, group_value in re.match(datetime_extractor_regex, text).groupdict():
-            if group_key.startswith('__DF_'):
+        for group_key, group_value in re.match(datetime_extractor_regex, text).groupdict().items():
+            if group_key.startswith('DF___'):
                 try:
-                    datetime_group_num = int(group_key[4:])
-                    datetime_format_codes.append(df_tokens[datetime_group_num])
+                    datetime_group_num = int(group_key[5:])
+                    datetime_format_codes.append(df_tokens[datetime_group_num].value)
                     datetime_string_values.append(group_value)
-                except:
+                except Exception:
                     continue
         datetime_formatter = '#'.join(datetime_format_codes)
         datetime_string = '#'.join(datetime_string_values)

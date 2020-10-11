@@ -33,6 +33,7 @@ class DatetimeMatcher:
         self.months_abbr = list(calendar.month_abbr)
         self.am_pm = [time(10).strftime('%p'), time(20).strftime('%p')]
         self.format_code_to_regex_map = {
+            # In the order listed in python3 docs for datetime
             r'a': r'|'.join(self.weekdays_abbr),
             r'A': r'|'.join(self.weekdays),
             r'w': r'[0-6]',
@@ -48,7 +49,14 @@ class DatetimeMatcher:
             r'M': r'[0-5][0-9]',
             r'S': r'[0-5][0-9]',
             r'f': r'[0-9]{6}',
-            #TODO: finish adding all datetime formats
+            r'z': r'[\+\-](?:[01][0-9]|2[0-3])[0-5][0-9](?:[0-5][0-9](?:\.[0-9]{6})?)?',
+            #TODO: %Z
+            r'j': r'[0-2][0-9]{2}|3[0-5][0-9]|36[0-6]',
+            r'U': r'[0-4][0-9]|5[0-3]',
+            r'W': r'[0-4][0-9]|5[0-3]',
+            #TODO: %c
+            #TODO: %x
+            #TODO: %X
         }
         self.dfregex_lexer_token_spec = {
             'DATETIME_FORMAT_CODE': self.get_regex_matching_supported_format_codes(),

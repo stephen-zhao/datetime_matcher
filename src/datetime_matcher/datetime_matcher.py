@@ -27,10 +27,10 @@ class DfregexToken(NamedTuple):
 class DatetimeMatcher:
 
     def __init__(self):
-        self.weekdays = list(calendar.day_name)
-        self.weekdays_abbr = list(calendar.day_abbr)
-        self.months = list(calendar.month_name)
-        self.months_abbr = list(calendar.month_abbr)
+        self.weekdays = list(filter(lambda x: x != None and len(x) > 0, calendar.day_name))
+        self.weekdays_abbr = list(filter(lambda x: x != None and len(x) > 0, calendar.day_abbr))
+        self.months = list(filter(lambda x: x != None and len(x) > 0, calendar.month_name))
+        self.months_abbr = list(filter(lambda x: x != None and len(x) > 0, calendar.month_abbr))
         self.am_pm = [time(10).strftime('%p'), time(20).strftime('%p')]
         self.format_code_to_regex_map = {
             # In the order listed in python3 docs for datetime
@@ -77,7 +77,7 @@ class DatetimeMatcher:
         if regex is None:
             return None
         else:
-            return f'(?<__DF_{capture_dfs_idx}>{regex})' if is_capture_dfs else f'(?:{regex})'
+            return f'(?P<DF___{capture_dfs_idx}>{regex})' if is_capture_dfs else f'(?:{regex})'
 
     def tokenize_dfregex(self, dfregex: str) -> Generator[DfregexToken, None, None]:
         """

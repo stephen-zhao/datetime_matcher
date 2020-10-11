@@ -1,5 +1,5 @@
 import pytest
-from src.datetime_matcher import DatetimeMatcher, DfregexToken
+from src.datetime_matcher import DatetimeMatcher
 
 def test_sanity_no_capture(pipeline_of_data_factory):
     # Given

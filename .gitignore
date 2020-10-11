@@ -1,5 +1,7 @@
 # General build artifacts
 /build
+/dist
+/datetime_matcher.egg-info
 
 # Python
 __pycache__

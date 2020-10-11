@@ -1,4 +1,4 @@
-# date-matcher
+# datetime_matcher
 
 A python module that works with an extension of regex which allows formatted
 datetime strings using python/C-style strftime format codes, hereby dubbed 
@@ -66,8 +66,8 @@ def sub(self, search_dfregex: str, replacement_dfregex: str, text: str) -> str
 - Replace the first matching instance of the search dfregex in the
   given text with the replacement dfregex, intelligently transferring
   the first matching date from the original text to the replaced text.
+- If no matches are found, the original text is returned.
 - Use strftime codes within a dfregex string to extract/place datetimes.
-- Example: as demonstrated in the section above.
 
 ### `match`
 

@@ -16,4 +16,4 @@ publish-test:
 clean:
 	rm -rf ./build ./datetime_matcher.egg-info ./dist
 
-.PHONY: all build publish publish-test clean
+.PHONY: all build publish publish-test clean test

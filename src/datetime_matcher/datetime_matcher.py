@@ -120,6 +120,8 @@ class DatetimeMatcher:
     def extract_datetime(self, dfregex: str, text: str) -> Optional[datetime]:
         """
         Extracts a datetime object from text given a dfregex string.
+
+        Use strftime codes within a dfregex string to match datetimes.
         """
         tokens = self.tokenize_dfregex(dfregex)
         datetime_extractor_regex = self.parse_dfregex_tokens(tokens, True)

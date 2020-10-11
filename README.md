@@ -9,6 +9,14 @@ matching a given search dfregex with a replacement string, allowing
 **both _datetime format substitutions_ and backslash-number substitutions**.
 See an example in the section below.
 
+## Install
+
+Get it from pypi now by running.
+
+```sh
+pip install datetime-matcher
+```
+
 ## Substitution Example
 
 Given the following as search pattern:

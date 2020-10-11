@@ -1,3 +1,9 @@
-.vscode
+# General build artifacts
+/build
+
+# Python
 __pycache__
 .pytest_cache
+
+# VS Code
+.vscode

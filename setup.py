@@ -5,14 +5,17 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='datetime_matcher',
-    version='0.1.0',
+    version='0.1.1',
     author='Stephen Zhao',
     author_email='mail@zhaostephen.com',
     description='A library which extends regex with support for datetime format codes.',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/stephen-zhao/datetime_matcher',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages('src'),
+    package_dir={
+        'datetime_matcher': 'src/datetime_matcher'
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

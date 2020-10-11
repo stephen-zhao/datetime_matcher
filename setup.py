@@ -11,6 +11,15 @@ setuptools.setup(
     description='A library which extends regex with support for datetime format codes.',
     long_description=long_description,
     long_description_content_type='text/markdown',
+    keywords=[
+        'datetime',
+        'regex',
+        'datetime parsing',
+        'datetime format',
+        'find and replace',
+        'substitution',
+        'regular expression',
+    ],
     url='https://github.com/stephen-zhao/datetime_matcher',
     packages=setuptools.find_packages('src'),
     package_dir={

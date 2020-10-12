@@ -1,59 +1,76 @@
-# datetime_matcher
+# datetime-matcher
 
 ![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/datetime-matcher)
 ![PyPI - License](https://img.shields.io/pypi/l/datetime-matcher)
 
-A python module that works with an extension of regex which allows formatted
-datetime strings using python/C-style strftime format codes, hereby dubbed 
-"dfregex" (read datetime format regex).
+datetime-matcher is python module that enables an extension of regex which allows
+matching, extracting, and reformatting stringified datetimes.
 
-Most notably, the library includes a function which can substitute a given text
-matching a given search dfregex with a replacement string, allowing
-**both _datetime format substitutions_ and backslash-number substitutions**.
-See an example in the section below.
+Most notably, it provides a function which essentially combines the `re.sub`,
+`datetime.strptime`, and `datetime.strftime` standard library functions and does all
+the complicated parsing and wiring for you.
 
-## Install
+It's mighty useful for doing things like bulk-renaming files with datetimes in their
+filenames. But don't let us tell you what it's good for—give it a try yourself!
 
-Get it from pypi now by running.
+## Installation
+
+Get it from pypi now by running
 
 ```sh
 pip install datetime-matcher
 ```
 
-## Substitution Example
+## Example of String Substitution with Datetime Reformatting
 
-Given the following as search pattern:
+Let's say we have several filenames of the following format that we want to rename:
 
-```python3
-search_dfregex = r'(\w+)\%.+_(%Y-%b-%d)\.jpe?g'
+```
+'MyLovelyPicture_2020-Mar-10.jpeg'
 ```
 
-> Note: The percentage literal in conventional regex (`%`) must be escaped in dfregex (`\%`)
-because an unescaped one marks the beginning of a datetime format code and otherwise would be
-ambiguous.
+We want to change them to look like this string:
 
-If we use this piece of text:
-
-```python3
-text = 'MyLovelyPicture%38E7F8AEA5_2020-Mar-10.jpeg'
+```
+'20200310-MyLovelyPicture.jpg'
 ```
 
-And the following replacement formatter:
+### The Unclean Way to Do It, without datetime-matcher
 
-```python3
-replacement = r'%Y%m%d-\1.jpg'
+Using the standard library `re.sub`, we run into an issue:
+
+```python
+text = 'MyLovelyPicture_2020-Mar-10.jpeg'
+
+search = r'(\w+)_([0-9]{4}-\w{3}-[0-9]{2})\.jpe?g' # ❌ messy
+replace = r'(??????)-\1.jpg'                       # ❌ what do we put for ??????
+
+result = re.sub(search, replace, text)             # ❌ This does't work
 ```
 
-Then we can run the following substitution:
+We have to manually run `datetime.strptime` with a custom parser string to extract the
+date, and then manually insert it back into the replacement string before running
+a non-generic search-and-replace using the customized replacement string.
+
+Yuck.
+
+### The Clean Way to Do It, with datetime-matcher
+
+We can do the following for a quick and easy substitution with reformatting.
 
 ```python3
 from datetime_matcher import DatetimeMatcher
-
 dtmatcher = DatetimeMatcher()
-result = dtmatcher.sub(search_dfregex, replacement, text)
 
-# result == '20200310-MyLovelyPicture.jpg'
+text = 'MyLovelyPicture_2020-Mar-10.jpeg'
+
+search = r'(\w+)_%Y-%b-%d\.jpe?g'             # ✅
+replace = r'%Y%m%d-\1.jpg'                    # ✅
+
+result = dtmatcher.sub(search, replace, text) # ✅
+
+# result == '20200310-MyLovelyPicture.jpg'    # ✅
 ```
 
 ## Features
@@ -64,11 +81,11 @@ public-facing methods:
 ### `sub`
 
 ```python3
-def sub(self, search_dfregex: str, replacement_dfregex: str, text: str) -> str
+def sub(self, search_dfregex: str, replacement: str, text: str) -> str
 ```
 
 - Replace the first matching instance of the search dfregex in the
-  given text with the replacement dfregex, intelligently transferring
+  given text with the replacement text, intelligently transferring
   the first matching date from the original text to the replaced text.
 - If no matches are found, the original text is returned.
 - Use strftime codes within a dfregex string to extract/place datetimes.
@@ -101,3 +118,23 @@ def extract_datetime(self, dfregex: str, text: str) -> Optional[datetime]
 
 - Extracts a datetime object from text given a dfregex string.
 - Use strftime codes within a dfregex string to match datetimes.
+
+## dfregex Syntax
+
+The syntax for dfregex is nearly identical to that of conventional python regex.
+There is only one addition and one alteration to support datetime format codes.
+
+### The Datetime Format Codes
+
+The percentage character indicates the beginning of a datetime format code. These codes
+are the standard C-style ones used in the built-in `datetime` module for `strftime`.
+
+For a full list of codes, see [the Python docs](https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes).
+
+> NOTE: The following codes are currently not supported: %Z, %c, %x, %X
+
+### The Percent Literal (%)
+
+The percentage literal in conventional regex (`%`) must be escaped in dfregex (`\%`)
+because an unescaped one marks the beginning of a datetime format code and otherwise would be
+ambiguous.

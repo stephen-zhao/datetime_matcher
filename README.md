@@ -1,8 +1,8 @@
 # datetime-matcher
 
-![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)
+[![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)](https://pypi.org/project/datetime-matcher/)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/datetime-matcher)
-![PyPI - License](https://img.shields.io/pypi/l/datetime-matcher)
+[![PyPI - License](https://img.shields.io/pypi/l/datetime-matcher)](https://github.com/stephen-zhao/datetime_matcher/blob/main/LICENSE)
 
 datetime-matcher is python module that enables an extension of regex which allows
 matching, extracting, and reformatting stringified datetimes.

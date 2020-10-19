@@ -3,7 +3,7 @@ from src.datetime_matcher import DatetimeMatcher
 
 def test_sanity_no_capture(pipeline_of_data_factory):
     # Given
-    test_pipeline = dict(pipeline_of_data_factory())
+    test_pipeline = dict(pipeline_of_data_factory('TEST_JPEG_FILE'))
     tokens_in = test_pipeline['dftokens']
     expected_out = test_pipeline['user_regex']
     # When
@@ -13,7 +13,7 @@ def test_sanity_no_capture(pipeline_of_data_factory):
 
 def test_sanity_capture_dfs(pipeline_of_data_factory):
     # Given
-    test_pipeline = dict(pipeline_of_data_factory())
+    test_pipeline = dict(pipeline_of_data_factory('TEST_JPEG_FILE'))
     tokens_in = test_pipeline['dftokens']
     expected_out = test_pipeline['dt_extractor_regex']
     # When

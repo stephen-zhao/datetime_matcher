@@ -3,7 +3,7 @@ from src.datetime_matcher import DatetimeMatcher
 
 def test_sanity_sub(pipeline_of_data_factory):
     # Given
-    test_pipeline = dict(pipeline_of_data_factory())
+    test_pipeline = dict(pipeline_of_data_factory('TEST_JPEG_FILE'))
     search_dfregex = test_pipeline['dfregex']
     replacement = r'%Y%m%d-\1.jpg'
     text = r'MyLovelyPicture%38E7F8AEA5_2020-Mar-10.jpeg'
@@ -15,7 +15,7 @@ def test_sanity_sub(pipeline_of_data_factory):
 
 def test_sub__no_match__text_unchanged(pipeline_of_data_factory):
     # Given
-    test_pipeline = dict(pipeline_of_data_factory())
+    test_pipeline = dict(pipeline_of_data_factory('TEST_JPEG_FILE'))
     search_dfregex = test_pipeline['dfregex']
     replacement = r'%Y%m%d-\1.jpg'
     text = r'MyLovelyPicture_2020-Mar-10.jpeg'

@@ -3,7 +3,7 @@ from src.datetime_matcher import DatetimeMatcher, DfregexToken
 
 def test_sanity(pipeline_of_data_factory):
     # Given
-    test_pipeline = dict(pipeline_of_data_factory())
+    test_pipeline = dict(pipeline_of_data_factory('TEST_JPEG_FILE'))
     dfregex_in = test_pipeline['dfregex']
     expected_out = test_pipeline['dftokens']
     # When

@@ -13,5 +13,5 @@ def test_sanity(pipeline_of_data_factory):
 
 def _verify(actual_tokens, expected_tokens):
     for actual, expected in zip(actual_tokens, expected_tokens):
-        assert(actual.kind == expected.kind)
-        assert(actual.value == expected.value)
+        assert actual.kind == expected.kind
+        assert actual.value == expected.value

@@ -11,7 +11,7 @@ def test_sanity_sub(pipeline_of_data_factory):
     # When
     actual_out = DatetimeMatcher().sub(search_dfregex, replacement, text)
     # Then
-    assert (actual_out == expected_out)
+    assert actual_out == expected_out
 
 def test_sub__no_match__text_unchanged(pipeline_of_data_factory):
     # Given
@@ -22,4 +22,4 @@ def test_sub__no_match__text_unchanged(pipeline_of_data_factory):
     # When
     actual_out = DatetimeMatcher().sub(search_dfregex, replacement, text)
     # Then
-    assert(actual_out == text)
+    assert actual_out == text

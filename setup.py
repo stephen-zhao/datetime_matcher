@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='datetime_matcher',
-    version='0.1.5',
+    version='0.1.6',
     author='Stephen Zhao',
     author_email='mail@zhaostephen.com',
     description='A library which extends regex with support for datetime format codes.',

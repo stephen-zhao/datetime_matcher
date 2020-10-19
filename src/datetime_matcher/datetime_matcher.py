@@ -205,7 +205,7 @@ class DatetimeMatcher:
 
         If no matches are found, the original text is returned.
         
-        Use a non-zero count to limit the number of extractions.
+        Use a non-zero count to limit the number of substitutions.
 
         Use strftime codes within a dfregex string to extract/place datetimes.
         """

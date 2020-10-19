@@ -1,6 +1,7 @@
 # datetime-matcher
 
 [![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)](https://pypi.org/project/datetime-matcher/)
+![PyPI - Status](https://img.shields.io/pypi/status/datetime-matcher)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/datetime-matcher)
 [![PyPI - License](https://img.shields.io/pypi/l/datetime-matcher)](https://github.com/stephen-zhao/datetime_matcher/blob/main/LICENSE)
 
@@ -81,13 +82,15 @@ public-facing methods:
 ### `sub`
 
 ```python3
-def sub(self, search_dfregex: str, replacement: str, text: str) -> str
+def sub(self, search_dfregex: str, replacement: str, text: str, count: int = 0) -> str
 ```
 
-- Replace the first matching instance of the search dfregex in the
-  given text with the replacement text, intelligently transferring
-  the first matching date from the original text to the replaced text.
+- Replace the matching instances of the search dfregex in the
+  given text with the replacement regex, intelligently transferring
+  the matching date from the original text to the replaced text
+  for each regex match.
 - If no matches are found, the original text is returned.
+- Use a non-zero count to limit the number of extractions.
 - Use strftime codes within a dfregex string to extract/place datetimes.
 
 ### `match`
@@ -96,8 +99,8 @@ def sub(self, search_dfregex: str, replacement: str, text: str) -> str
 def match(self, search_dfregex: str, text: str) -> Optional[Match[AnyStr]]
 ```
 
-- Determine if the given text matches the search dfregex, and return
-  the corresponding Match object if it exists.
+- Determines if text matches the given dfregex.
+- Return the corresponding match object if found, otherwise returns None.
 - Use strftime codes within a dfregex string to extract/place datetimes.
 
 ### `get_regex_from_dfregex`
@@ -110,13 +113,25 @@ def get_regex_from_dfregex(self, dfregex: str, is_capture_dfs: bool = False) -> 
 - By default, the datetime format groups are NOT captured.
 - Use strftime codes within a dfregex string to match datetimes.
 
+### `extract_datetimes`
+
+```python3
+def extract_datetimes(self, dfregex: str, text: str, count: int = 0) -> Iterable[datetime]
+```
+
+- Extracts the leftmost datetimes from text given a dfregex string.
+- Returns an Iterable of datetime objects.
+- Use a non-zero count to limit the number of extractions.
+- Use strftime codes within a dfregex string to match datetimes.
+
 ### `extract_datetime`
 
 ```python3
 def extract_datetime(self, dfregex: str, text: str) -> Optional[datetime]
 ```
 
-- Extracts a datetime object from text given a dfregex string.
+- Extracts the leftmost datetime from text given a dfregex string.
+- Returns the matching datetime object if found, otherwise returns None.
 - Use strftime codes within a dfregex string to match datetimes.
 
 ## dfregex Syntax

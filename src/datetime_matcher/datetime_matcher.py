@@ -125,35 +125,66 @@ class DatetimeMatcher:
         """
         return ''.join(self.parse_dfregex_tokens_into_parts(dfregex_tokens, is_capture_dfs))
 
+    def __extract_datetimes_for_all_regex_matches(self, dfregex: str, text: str, count: int = 0) -> Iterable[Optional[datetime]]:
+        # Get all of the format codes in the dfregex and the regex which can be used for extraction
+        tokens = list(self.tokenize_dfregex(dfregex))
+        datetime_extractor_regex = self.parse_dfregex_tokens(tokens, True)
+        df_tokens = list(token for token in tokens if token.kind == 'DATETIME_FORMAT_CODE')
+        # Use regex to iterate over all matches
+        for match_num, match in enumerate(re.finditer(datetime_extractor_regex, text)):
+            if count > 0 and match_num >= count:
+                break
+            datetime_format_codes = []
+            datetime_string_values = []
+            for group_key, group_value in match.groupdict().items():
+                # Find only the df groups and match up the format codes with the actual datetime values
+                if group_key.startswith('DF___'):
+                    try:
+                        datetime_group_num = int(group_key[5:])
+                        datetime_format_codes.append(df_tokens[datetime_group_num].value)
+                        datetime_string_values.append(group_value)
+                    except Exception:
+                        # Skip all problematic ones
+                        continue
+            # Now construct strings to use for strptime to generate a datetime object from the values
+            datetime_formatter = '#'.join(datetime_format_codes)
+            datetime_string = '#'.join(datetime_string_values)
+            try:
+                parsed_datetime = datetime.strptime(datetime_string, datetime_formatter)
+            except ValueError:
+                # If there is a problem, we still need to return a value to maintain
+                # one-to-one mapping between regex match and datetime
+                yield None
+            # Otherwise, yield the extracted datetime
+            yield parsed_datetime
+
     def extract_datetime(self, dfregex: str, text: str) -> Optional[datetime]:
         """
-        Extracts a datetime object from text given a dfregex string.
+        Extracts the leftmost datetime from text given a dfregex string.
+        
+        Returns the matching datetime object if found, otherwise returns None.
 
         Use strftime codes within a dfregex string to match datetimes.
         """
-        tokens = list(self.tokenize_dfregex(dfregex))
-        datetime_extractor_regex = self.parse_dfregex_tokens(tokens, True)
-        df_tokens = list(filter(lambda x: x.kind == 'DATETIME_FORMAT_CODE', tokens))
-        datetime_format_codes = []
-        datetime_string_values = []
-        match = re.match(datetime_extractor_regex, text)
-        if match is None:
-            return None
-        for group_key, group_value in match.groupdict().items():
-            if group_key.startswith('DF___'):
-                try:
-                    datetime_group_num = int(group_key[5:])
-                    datetime_format_codes.append(df_tokens[datetime_group_num].value)
-                    datetime_string_values.append(group_value)
-                except Exception:
-                    continue
-        datetime_formatter = '#'.join(datetime_format_codes)
-        datetime_string = '#'.join(datetime_string_values)
-        try:
-            parsed_datetime = datetime.strptime(datetime_string, datetime_formatter)
-        except ValueError:
-            return None
-        return parsed_datetime
+        return next(self.__extract_datetimes_for_all_regex_matches(dfregex, text), None)
+
+    def extract_datetimes(self, dfregex: str, text: str, count: int = 0) -> Iterable[datetime]:
+        """
+        Extracts the leftmost datetimes from text given a dfregex string.
+
+        Returns an Iterable of datetime objects.
+
+        Use a non-zero count to limit the number of extractions.
+
+        Use strftime codes within a dfregex string to match datetimes.
+        """
+        extract_num = 0
+        for maybe_datetime in self.__extract_datetimes_for_all_regex_matches(dfregex, text):
+            if count > 0 and extract_num >= count:
+                break
+            if maybe_datetime is not None:
+                extract_num += 1
+                yield maybe_datetime
 
     def get_regex_from_dfregex(self, dfregex: str, is_capture_dfs: bool = False) -> str:
         """
@@ -165,27 +196,34 @@ class DatetimeMatcher:
         """
         return self.parse_dfregex_tokens(self.tokenize_dfregex(dfregex), is_capture_dfs)
 
-    def sub(self, search_dfregex: str, replacement_dfregex: str, text: str) -> str:
+    def sub(self, search_dfregex: str, replacement: str, text: str, count: int = 0) -> str:
         """
-        Replace the first matching instance of the search dfregex in the
-        given text with the replacement dfregex, intelligently transferring
-        the first matching date from the original text to the replaced text.
+        Replace the matching instances of the search dfregex in the
+        given text with the replacement regex, intelligently transferring
+        the matching date from the original text to the replaced text
+        for each regex match.
 
         If no matches are found, the original text is returned.
+        
+        Use a non-zero count to limit the number of extractions.
 
         Use strftime codes within a dfregex string to extract/place datetimes.
         """
         search_regex = self.get_regex_from_dfregex(search_dfregex)
-        dt = self.extract_datetime(search_dfregex, text)
-        if dt is None:
-            return text
-        subbed_text_with_df_codes = re.sub(search_regex, replacement_dfregex, text)
-        return dt.strftime(subbed_text_with_df_codes)
+        maybe_datetimes = self.__extract_datetimes_for_all_regex_matches(search_dfregex, text, count)
+        def match_handler(match: Match[AnyStr]) -> str:
+            dt = next(maybe_datetimes, None)
+            if dt is None:
+                return match.expand(replacement)
+            else:
+                return match.expand(dt.strftime(replacement))
+        return re.sub(search_regex, match_handler, text, count)
     
     def match(self, search_dfregex: str, text: str) -> Optional[Match[AnyStr]]:
         """
-        Determine if the given text matches the search dfregex, and return
-        the corresponding Match object if it exists.
+        Determines if text matches the given dfregex.
+
+        Return the corresponding match object if found, otherwise returns None.
 
         Use strftime codes within a dfregex string to extract/place datetimes.
         """

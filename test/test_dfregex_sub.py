@@ -23,3 +23,14 @@ def test_sub__no_match__text_unchanged(pipeline_of_data_factory):
     actual_out = DatetimeMatcher().sub(search_dfregex, replacement, text)
     # Then
     assert actual_out == text
+
+def test_sub__many_matches__subs_all():
+    # Given
+    search_dfregex = r'\s*(\d+)\s*\=\>\s*%Y,?'
+    replacement = r' \1 = %y;'
+    text = r'January 1997: Do some stuff for each of these years.. 1 => 1970, 2 => 1971, 3 =>1972, 4 => 1973,5=>  1974'
+    expected_out = r'January 1997: Do some stuff for each of these years.. 1 = 70; 2 = 71; 3 = 72; 4 = 73; 5 = 74;'
+    # When
+    actual_out = DatetimeMatcher().sub(search_dfregex, replacement, text)
+    # Then
+    assert actual_out == expected_out

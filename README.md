@@ -1,4 +1,4 @@
-# datetime-matcher
+# datetime-matcher 📆←💬
 
 [![PyPI](https://img.shields.io/pypi/v/datetime-matcher?color=brightgreen&label=pypi%20package)](https://pypi.org/project/datetime-matcher/)
 ![PyPI - Status](https://img.shields.io/pypi/status/datetime-matcher)

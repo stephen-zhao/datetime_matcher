@@ -21,6 +21,19 @@ class DatetimeMatcher:
         self.__extractor = DatetimeExtractor()
 
     # public
+    def get_regex_from_dfregex(self, dfregex: str, is_capture_dfs: bool = False) -> str:
+        """
+        Converts a dfregex search pattern to its corresponding conventional regex search pattern.
+
+        By default, the datetime format groups are not captured.
+        """
+        # Tokenize
+        tokens = self.__dfregexLexer.tokenize(dfregex)
+        # Generate the regex (either capturing datetimes or not)
+        regex: str = self.__regexGenerator.generate_regex(tokens, is_capture_dfs)
+        return regex
+
+    # public
     def extract_datetime(self, dfregex: str, text: str) -> Optional[datetime]:
         """
         Extracts the leftmost datetime from text given a dfregex search string.
@@ -59,18 +72,67 @@ class DatetimeMatcher:
                 extract_num += 1
                 yield maybe_datetime
 
-    # public
-    def get_regex_from_dfregex(self, dfregex: str, is_capture_dfs: bool = False) -> str:
-        """
-        Converts a dfregex search pattern to its corresponding conventional regex search pattern.
+    # ==================== re based public methods ====================
 
-        By default, the datetime format groups are not captured.
+    # public
+    def search(self, search_dfregex: str, text: str) -> Optional[Match[str]]:
         """
-        # Tokenize
-        tokens = self.__dfregexLexer.tokenize(dfregex)
-        # Generate the regex (either capturing datetimes or not)
-        regex: str = self.__regexGenerator.generate_regex(tokens, is_capture_dfs)
-        return regex
+        Scan through string looking for a match to the pattern, returning a Match object, or None if no match was found.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.search(search_regex, text)
+
+    # public
+    def match(self, search_dfregex: str, text: str) -> Optional[Match[str]]:
+        """
+        Try to apply the pattern at the start of the string, returning a Match object, or None if no match was found.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.match(search_regex, text)
+
+    # public
+    # TODO: fullmatch
+
+    # public
+    # TODO: split
+
+    # public
+    def findall(self, search_dfregex: str, text: str) -> List[Match[str]]:
+        """
+        Return a list of all non-overlapping matches in the string.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+
+        If one or more capturing groups are present in the pattern, return a list of groups; this will be a list of tuples if the pattern has more than one group.
+
+        Empty matches are included in the result.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.findall(search_regex, text)
+
+    # public
+    def finditer(self, search_dfregex: str, text: str) -> Iterator[Match[str]]:
+        """
+        Return an iterator over all non-overlapping matches in the string. For each match, the iterator returns a Match object.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+
+        Empty matches are included in the result.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.finditer(search_regex, text)
 
     # public
     def sub(
@@ -114,55 +176,7 @@ class DatetimeMatcher:
         return subbed
 
     # public
-    def match(self, search_dfregex: str, text: str) -> Optional[Match[str]]:
-        """
-        Try to apply the pattern at the start of the string, returning a Match object, or None if no match was found.
-
-        Uses strftime codes within the dfregex search pattern to match against datetimes.
-        """
-        # Convert to regex
-        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
-        # Delegate to re
-        return re.match(search_regex, text)
+    # TODO: subn
 
     # public
-    def search(self, search_dfregex: str, text: str) -> Optional[Match[str]]:
-        """
-        Scan through string looking for a match to the pattern, returning a Match object, or None if no match was found.
-
-        Uses strftime codes within the dfregex search pattern to match against datetimes.
-        """
-        # Convert to regex
-        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
-        # Delegate to re
-        return re.search(search_regex, text)
-
-    # public
-    def findall(self, search_dfregex: str, text: str) -> List[Match[str]]:
-        """
-        Return a list of all non-overlapping matches in the string.
-
-        Uses strftime codes within the dfregex search pattern to match against datetimes.
-
-        If one or more capturing groups are present in the pattern, return a list of groups; this will be a list of tuples if the pattern has more than one group.
-
-        Empty matches are included in the result.
-        """
-        # Convert to regex
-        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
-        # Delegate to re
-        return re.findall(search_regex, text)
-
-    # public
-    def finditer(self, search_dfregex: str, text: str) -> Iterator[Match[str]]:
-        """
-        Return an iterator over all non-overlapping matches in the string. For each match, the iterator returns a Match object.
-
-        Uses strftime codes within the dfregex search pattern to match against datetimes.
-
-        Empty matches are included in the result.
-        """
-        # Convert to regex
-        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
-        # Delegate to re
-        return re.finditer(search_regex, text)
+    # TODO: escape

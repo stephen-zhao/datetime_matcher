@@ -25,6 +25,7 @@ REQUIREMENTS_DISTTIME_FILENAME := requirements.txt
 package := datetime_matcher
 package_dir := src/datetime_matcher
 test_dir := test
+coverage_percent = 80
 
 
 # ==================== Virtual Environment Management ====================
@@ -174,7 +175,7 @@ build: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 
 .PHONY: test
 test: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
-	$(PY_IN_VENV_EXE) -m pytest $(package_dir) $(test_dir)
+	$(PY_IN_VENV_EXE) -m pytest --cov=. --cov-fail-under=$(coverage_percent) --cov-config=setup.cfg --cov-report=xml:coverage.xml --cov-report=term-missing --cov-branch $(package_dir) $(test_dir)
 
 
 # ==================== Publishing ====================

@@ -10,6 +10,8 @@ attrs==21.4.0
     # via pytest
 build==0.7.0
     # via -r requirements-devtime.d/build.in
+coverage[toml]==6.2
+    # via pytest-cov
 iniconfig==1.1.1
     # via pytest
 isort==5.10.1
@@ -31,12 +33,17 @@ py==1.11.0
 pyparsing==3.0.7
     # via packaging
 pytest==6.2.5
+    # via
+    #   -r requirements-devtime.d/test.in
+    #   pytest-cov
+pytest-cov==3.0.0
     # via -r requirements-devtime.d/test.in
 toml==0.10.2
     # via pytest
 tomli==2.0.0
     # via
     #   build
+    #   coverage
     #   mypy
     #   pep517
 typing-extensions==4.0.1

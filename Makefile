@@ -1,6 +1,3 @@
-
-all: build test
-
 PY_EXE_PATH ?= $(shell which python3.9 || which python3.8 || which python3.7 || which python3.6 || which python3)
 PY_EXE := $(shell basename $(PY_EXE_PATH))
 
@@ -27,6 +24,9 @@ package_dir := src/datetime_matcher
 test_dir := test
 coverage_percent = 80
 
+# ==================== Virtual Environment Management ====================
+
+all: fix-lint build lint test build
 
 # ==================== Virtual Environment Management ====================
 
@@ -140,11 +140,16 @@ $(ALL_INPUT_REQUIREMENTS_FILENAMES) &:
 
 .PHONY: lint
 lint: # Run all linters in check mode
-lint: isort mypy
+lint: isort flake8 mypy
 
 .PHONY: fix-lint
 fix-lint: # Run all auto-fix linters
 fix-lint: isort-fix
+
+.PHONY: flake8
+flake8: # Run flake8 to check PEP style violations
+flake8: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
+	$(PY_IN_VENV_EXE) -m flake8 --config=setup.cfg $(package_dir)
 
 .PHONY: isort
 isort: # Run isort to check sorting of imports

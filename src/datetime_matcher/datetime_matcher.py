@@ -2,12 +2,12 @@
 # Author: Stephen Zhao
 # Package: datetime_matcher
 # Version: v0.2
-# Last modified: 2022-01-21
+# Last modified: 2022-01-22
 # Description: A library which extends regex with support for datetime format codes.
 
 import re
 from datetime import datetime
-from typing import Iterable, Match, Optional
+from typing import Iterable, Iterator, List, Match, Optional
 
 from datetime_matcher.datetime_extractor import DatetimeExtractor
 from datetime_matcher.dfregex_lexer import DfregexLexer
@@ -28,11 +28,11 @@ class DatetimeMatcher:
         text: str
     ) -> Optional[datetime]:
         """
-        Extracts the leftmost datetime from text given a dfregex string.
+        Extracts the leftmost datetime from text given a dfregex search string.
+
+        Uses strftime codes within a dfregex search pattern to extract the datetime.
         
         Returns the matching datetime object if found, otherwise returns None.
-
-        Use strftime codes within a dfregex string to match datetimes.
         """
         # Run the more generic method, but return None if none are found
         return next(iter(self.extract_datetimes(dfregex, text, 1)), None)
@@ -45,16 +45,16 @@ class DatetimeMatcher:
         count: int = 0
     ) -> Iterable[datetime]:
         """
-        Extracts the leftmost datetimes from text given a dfregex string.
+        Extracts the leftmost datetimes from text given a dfregex search string.
+
+        Uses strftime codes within a dfregex search pattern to extract datetimes.
 
         Returns an Iterable of datetime objects.
 
         Use a non-zero count to limit the number of extractions.
-
-        Use strftime codes within a dfregex string to match datetimes.
         """
         # Tokenize
-        tokens = self.__dfregexLexer.tokenize(dfregex)
+        tokens = list(self.__dfregexLexer.tokenize(dfregex))
         # Generate the extraction regex
         regex = self.__regexGenerator.generate_regex(tokens, True)
         # Extract up to `count` number of datetimes
@@ -74,11 +74,9 @@ class DatetimeMatcher:
         is_capture_dfs: bool = False
     ) -> str:
         """
-        Converts a dfregex to its corresponding conventional regex.
+        Converts a dfregex search pattern to its corresponding conventional regex search pattern.
 
-        By default, the datetime format groups are NOT captured.
-
-        Use strftime codes within a dfregex string to match datetimes.
+        By default, the datetime format groups are not captured.
         """
         # Tokenize
         tokens = self.__dfregexLexer.tokenize(dfregex)
@@ -95,23 +93,22 @@ class DatetimeMatcher:
         count: int = 0
     ) -> str:
         """
-        Replace the matching instances of the search dfregex in the
-        given text with the replacement regex, intelligently transferring
-        the matching date from the original text to the replaced text
-        for each regex match.
+        Return the string obtained by replacing the leftmost non-overlapping occurrences of the pattern in string by the replacement repl.
+        repl can be either a string or a callable; if a string, backslash escapes in it are processed.
+        If it is a callable, it's passed the Match object and must return a replacement string to be used.
+
+        Uses strftime codes within a dfregex search pattern to extract and substitute datetimes.
 
         If no matches are found, the original text is returned.
         
         Use a non-zero count to limit the number of substitutions.
-
-        Use strftime codes within a dfregex string to extract/place datetimes.
         """
         # Tokenize
-        tokens = self.__dfregexLexer.tokenize(search_dfregex)
+        tokens = list(self.__dfregexLexer.tokenize(search_dfregex))
         # Generate the extraction regex
         datetime_extraction_regex = self.__regexGenerator.generate_regex(tokens, True)
         # Extract datetimes, maintaining one-to-one with matched groups
-        maybe_datetimes = self.__extractor.extract_datetimes(datetime_extraction_regex, tokens, text, count)
+        maybe_datetimes = list(self.__extractor.extract_datetimes(datetime_extraction_regex, tokens, text, count))
         # Generate the search regex (and do not capture datetimes, or the result would go against user's intentions)
         search_regex = self.__regexGenerator.generate_regex(tokens, False)
         # Use a match handler which iterates through the maybe datetimes at the same rate as matching
@@ -122,7 +119,7 @@ class DatetimeMatcher:
                 return match.expand(replacement)
             else:
                 return match.expand(dt.strftime(replacement))
-        # Run the regex-based substitution
+        # Delegate to re
         subbed: str = re.sub(search_regex, match_handler, text, count)
         return subbed
 
@@ -133,14 +130,65 @@ class DatetimeMatcher:
         text: str
     ) -> Optional[Match[str]]:
         """
-        Determines if text matches the given dfregex.
+        Try to apply the pattern at the start of the string, returning a Match object, or None if no match was found.
 
-        Return the corresponding match object if found, otherwise returns None.
-
-        Use strftime codes within a dfregex string to extract/place datetimes.
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
         """
-        # Tokenize
-        tokens = self.__dfregexLexer.tokenize(search_dfregex)
-        # Generate the search regex (and do not capture datetimes, or the result would go against user's intentions)
-        search_regex = self.__regexGenerator.generate_regex(tokens, False)
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
         return re.match(search_regex, text)
+
+    # public
+    def search(
+        self,
+        search_dfregex: str,
+        text: str
+    ) -> Optional[Match[str]]:
+        """
+        Scan through string looking for a match to the pattern, returning a Match object, or None if no match was found.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.search(search_regex, text)
+
+    # public
+    def findall(
+        self,
+        search_dfregex: str,
+        text: str
+    ) -> List[Match[str]]:
+        """
+        Return a list of all non-overlapping matches in the string.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+
+        If one or more capturing groups are present in the pattern, return a list of groups; this will be a list of tuples if the pattern has more than one group.
+
+        Empty matches are included in the result.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.findall(search_regex, text)
+
+    # public
+    def finditer(
+        self,
+        search_dfregex: str,
+        text: str
+    ) -> Iterator[Match[str]]:
+        """
+        Return an iterator over all non-overlapping matches in the string. For each match, the iterator returns a Match object.
+
+        Uses strftime codes within the dfregex search pattern to match against datetimes.
+
+        Empty matches are included in the result.
+        """
+        # Convert to regex
+        search_regex = self.get_regex_from_dfregex(search_dfregex, False)
+        # Delegate to re
+        return re.finditer(search_regex, text)

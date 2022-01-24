@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import AnyStr, Generic, Literal, Tuple, get_args
+from typing import Literal, Tuple, get_args
 
 DfregexTokenKindType = Literal[
     'DATETIME_FORMAT_CODE',
@@ -28,6 +28,7 @@ SupportedDatetimeFormatCodeType = Literal[
     r'H',
     r'-H',
     r'I',
+    r'-I',
     r'p',
     r'M',
     r'-M',

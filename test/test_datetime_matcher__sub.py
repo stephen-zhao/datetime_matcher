@@ -1,5 +1,5 @@
-import pytest
-from src.datetime_matcher import DatetimeMatcher
+from datetime_matcher.datetime_matcher import DatetimeMatcher
+
 
 def test_sanity_sub(pipeline_of_data_factory):
     # Given

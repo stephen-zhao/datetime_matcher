@@ -1,12 +1,17 @@
 # General build artifacts
 /build
 /dist
+__pycache__
 **/*.egg-info
 
-# Python
-__pycache__
-.pytest_cache
+# Virtual Env
 .venv
 
 # VS Code
 .vscode
+
+# Mypy
+.mypy_cache
+
+# Pytest
+.pytest_cache

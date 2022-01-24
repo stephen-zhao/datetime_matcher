@@ -15,9 +15,12 @@ PIP_SYNC_IN_VENV_EXE := $(PY_IN_VENV_EXE) -m piptools sync
 MARKER_VENV := $(VENV_DIR)/bin/.m_venv
 MARKER_PIPTOOLS := $(VENV_DIR)/bin/.m_piptools
 MARKER_REQUIREMENTS_RESOLVED := $(VENV_DIR)/bin/.m_requirements-resolved
+MARKER_REQUIREMENTS_SYNCED_DEVTIME := $(VENV_DIR)/bin/.m_requirements-synced--devtime
+MARKER_REQUIREMENTS_SYNCED_DISTTIME := $(VENV_DIR)/bin/.m_requirements-synced--disttime
+MARKER_INSTALLED_EDITABLE := $(VENV_DIR)/bin/.m_installed-editable
 
 REQUIREMENTS_DEVTIME_FILENAME := requirements-devtime.txt
-REQUIREMENTS_RUNTIME_FILENAME := requirements.txt
+REQUIREMENTS_DISTTIME_FILENAME := requirements.txt
 
 package := datetime_matcher
 package_dir := src/datetime_matcher
@@ -52,9 +55,9 @@ $(MARKER_PIPTOOLS):
 # ==================== Requirements Management ====================
 
 # Requirements input files
-INPUT_RUNTIME_REQUIREMENTS_FILENAME := requirements.in
+INPUT_DISTTIME_REQUIREMENTS_FILENAME := requirements.in
 INPUT_DEVTIME_REQUIREMENTS_FILENAMES := $(wildcard requirements-devtime.d/*.in)
-ALL_INPUT_REQUIREMENTS_FILENAMES := $(INPUT_RUNTIME_REQUIREMENTS_FILENAME) $(INPUT_DEVTIME_REQUIREMENTS_FILENAMES)
+ALL_INPUT_REQUIREMENTS_FILENAMES := $(INPUT_DISTTIME_REQUIREMENTS_FILENAME) $(INPUT_DEVTIME_REQUIREMENTS_FILENAMES)
 
 # Resolve and then Sync requirements
 
@@ -73,24 +76,34 @@ upgrade-requirements: $(MARKER_PIPTOOLS)
 # Syncing of Actual Requirements
 
 .PHONY: sync-devtime-requirements
-sync-devtime-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for devtime requirements
+sync-devtime-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for dev-time requirements
 sync-devtime-requirements: $(MARKER_PIPTOOLS) $(MARKER_REQUIREMENTS_RESOLVED)
 	test -f $(REQUIREMENTS_DEVTIME_FILENAME) || make resolve-requirements
 	$(PIP_SYNC_IN_VENV_EXE) $(REQUIREMENTS_DEVTIME_FILENAME)
 	@echo "Installed devtime requirements as specified in $(REQUIREMENTS_DEVTIME_FILENAME)."
+	@touch $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 
-.PHONY: sync-runtime-requirements
-sync-runtime-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for devtime requirements
-sync-runtime-requirements: $(MARKER_PIPTOOLS) $(MARKER_REQUIREMENTS_RESOLVED)
-	test -f $(REQUIREMENTS_RUNTIME_FILENAME) || make resolve-requirements
-	$(PIP_SYNC_IN_VENV_EXE) $(REQUIREMENTS_RUNTIME_FILENAME)
-	@echo "Installed runtime requirements as specified in $(REQUIREMENTS_RUNTIME_FILENAME)."
+.PHONY: sync-disttime-requirements
+sync-disttime-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for dist-time requirements
+sync-disttime-requirements: $(MARKER_PIPTOOLS) $(MARKER_REQUIREMENTS_RESOLVED)
+	test -f $(REQUIREMENTS_DISTTIME_FILENAME) || make resolve-requirements
+	$(PIP_SYNC_IN_VENV_EXE) $(REQUIREMENTS_DISTTIME_FILENAME)
+	@echo "Installed disttime requirements as specified in $(REQUIREMENTS_DISTTIME_FILENAME)."
+	@touch $(MARKER_REQUIREMENTS_SYNCED_DISTTIME)
 
 .PHONY: sync-requirements
-sync-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for both devtime and runtime requirements
-sync-requirements: $(MARKER_PIPTOOLS) $(MARKER_REQUIREMENTS_RESOLVED)
+sync-requirements: # Syncs (installs/upgrades) the actual requirements by downloading the exact versions of the requirements specified in the pinned .txt for both dev-time and dist-time requirements
+sync-requirements: $(MARKER_PIPTOOLS)
 	make sync-devtime-requirements
-	make sync-runtime-requirements
+# make sync-disttime-requirements
+
+$(MARKER_REQUIREMENTS_SYNCED_DEVTIME): # If the requirements resolved marker has been updated, then the requirements are considered NOT synced
+$(MARKER_REQUIREMENTS_SYNCED_DEVTIME): $(MARKER_REQUIREMENTS_RESOLVED)
+	make sync-devtime-requirements
+
+$(MARKER_REQUIREMENTS_SYNCED_DISTTIME): # If the requirements resolved marker has been updated, then the requirements are considered NOT synced
+$(MARKER_REQUIREMENTS_SYNCED_DISTTIME): $(MARKER_REQUIREMENTS_RESOLVED)
+	make sync-disttime-requirements
 
 # Resolving of Requirements
 
@@ -99,9 +112,9 @@ resolve-requirements: # Resolves requirements from input files to generate pinne
 resolve-requirements: # - then marks requirements as having been resolved
 resolve-requirements: $(MARKER_PIPTOOLS)
 	$(PIP_COMPILE_IN_VENV_EXE) --output-file=$(REQUIREMENTS_DEVTIME_FILENAME) $(ALL_INPUT_REQUIREMENTS_FILENAMES)
-	@echo "Updated $(REQUIREMENTS_DEVTIME_FILENAME) with devtime and runtime requirements."
-	$(PIP_COMPILE_IN_VENV_EXE) --output-file=$(REQUIREMENTS_RUNTIME_FILENAME) $(INPUT_RUNTIME_REQUIREMENTS_FILENAME)
-	@echo "Updated $(REQUIREMENTS_RUNTIME_FILENAME) with runtime requirements."
+	@echo "Updated $(REQUIREMENTS_DEVTIME_FILENAME) with devtime and disttime requirements."
+	$(PIP_COMPILE_IN_VENV_EXE) --output-file=$(REQUIREMENTS_DISTTIME_FILENAME) $(INPUT_DISTTIME_REQUIREMENTS_FILENAME)
+	@echo "Updated $(REQUIREMENTS_DISTTIME_FILENAME) with disttime requirements."
 	@touch $(MARKER_REQUIREMENTS_RESOLVED)
 
 .PHONY: update-requirements
@@ -109,9 +122,9 @@ update-requirements: # Resolves requirements from input files to generate pinned
 update-requirements: # - then marks requirements as having been resolved
 update-requirements: $(MARKER_PIPTOOLS)
 	$(PIP_COMPILE_IN_VENV_EXE) --upgrade --output-file=$(REQUIREMENTS_DEVTIME_FILENAME) $(ALL_INPUT_REQUIREMENTS_FILENAMES)
-	@echo "Updated $(REQUIREMENTS_DEVTIME_FILENAME) with latest/upgraded devtime and runtime requirements."
-	$(PIP_COMPILE_IN_VENV_EXE) --upgrade --output-file=$(REQUIREMENTS_RUNTIME_FILENAME) $(INPUT_RUNTIME_REQUIREMENTS_FILENAME)
-	@echo "Updated $(REQUIREMENTS_RUNTIME_FILENAME) with latest/upgraded runtime requirements."
+	@echo "Updated $(REQUIREMENTS_DEVTIME_FILENAME) with latest/upgraded devtime and disttime requirements."
+	$(PIP_COMPILE_IN_VENV_EXE) --upgrade --output-file=$(REQUIREMENTS_DISTTIME_FILENAME) $(INPUT_DISTTIME_REQUIREMENTS_FILENAME)
+	@echo "Updated $(REQUIREMENTS_DISTTIME_FILENAME) with latest/upgraded disttime requirements."
 	@touch $(MARKER_REQUIREMENTS_RESOLVED)
 
 $(MARKER_REQUIREMENTS_RESOLVED): # If any of the requirements input files have been updated, the requirements are NOT considered resolved
@@ -134,33 +147,37 @@ fix-lint: isort-fix
 
 .PHONY: isort
 isort: # Run isort to check sorting of imports
-isort: sync-devtime-requirements
+isort: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 	$(PY_IN_VENV_EXE) -m isort --check-only $(package_dir)
 	$(PY_IN_VENV_EXE) -m isort --check-only $(test_dir)
 
 .PHONY: isort-fix
 isort-fix: # Run isort to fix sorting of imports
-isort-fix: sync-devtime-requirements
+isort-fix: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 	$(PY_IN_VENV_EXE) -m isort $(package_dir)
 	$(PY_IN_VENV_EXE) -m isort $(test_dir)
 
 .PHONY: mypy
 mypy: # Run mypy type-checker
-mypy: sync-devtime-requirements
+mypy: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 	$(PY_IN_VENV_EXE) -m mypy --config-file setup.cfg $(package_dir)
-
-# ==================== Testing ====================
-
-.PHONY: test
-test: sync-devtime-requirements
-	$(PY_IN_VENV_EXE) -m pytest $(test_dir)
 
 
 # ==================== Building ====================
 
 .PHONY: build
-build:
+build: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 	$(PY_IN_VENV_EXE) -m build
+
+
+# ==================== Testing ====================
+
+.PHONY: test
+test: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
+	$(PY_IN_VENV_EXE) -m pytest $(package_dir) $(test_dir)
+
+
+# ==================== Publishing ====================
 
 .PHONY: publish
 publish:
@@ -169,6 +186,7 @@ publish:
 .PHONY: publish-test
 publish-test:
 	python3 -m twine upload --repository testpypi dist/*
+
 
 # ==================== Cleaning Up ====================
 

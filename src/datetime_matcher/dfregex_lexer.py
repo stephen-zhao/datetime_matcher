@@ -16,8 +16,8 @@ class DfregexLexer:
         """Initializer."""
         self.dfregex_lexer_spec_by_token_kind: Dict[DfregexTokenKindType, str] = {
             'DATETIME_FORMAT_CODE': self.__get_regex_matching_supported_format_codes(),
-            'PERCENT_LITERAL':      r'\\%',
-            'OTHER_REGEX_CHAR':     r'.',
+            'PERCENT_LITERAL': r'\\%',
+            'OTHER_REGEX_CHAR': r'.',
         }
         self.dfregex_lexer_spec = '|'.join(f'(?P<{kind}>{regex})' for kind, regex in self.dfregex_lexer_spec_by_token_kind.items())
 

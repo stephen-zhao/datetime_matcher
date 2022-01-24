@@ -1,6 +1,9 @@
 from datetime import datetime
+
 import pytest
+
 from datetime_matcher.datetime_extractor import DatetimeExtractor
+
 
 @pytest.mark.parametrize('text_in,expected_out_first', [
     (r'MyNotSoLovelyPicture%-flameos_2011-Jul-05.jpg', datetime(2011, 7, 5)),

@@ -31,7 +31,7 @@ class DatetimeMatcher:
         Extracts the leftmost datetime from text given a dfregex search string.
 
         Uses strftime codes within a dfregex search pattern to extract the datetime.
-        
+
         Returns the matching datetime object if found, otherwise returns None.
         """
         # Run the more generic method, but return None if none are found
@@ -100,7 +100,7 @@ class DatetimeMatcher:
         Uses strftime codes within a dfregex search pattern to extract and substitute datetimes.
 
         If no matches are found, the original text is returned.
-        
+
         Use a non-zero count to limit the number of substitutions.
         """
         # Tokenize
@@ -113,6 +113,7 @@ class DatetimeMatcher:
         search_regex = self.__regexGenerator.generate_regex(tokens, False)
         # Use a match handler which iterates through the maybe datetimes at the same rate as matching
         maybe_datetime = iter(maybe_datetimes)
+
         def match_handler(match: Match[str]) -> str:
             dt = next(maybe_datetime, None)
             if dt is None:

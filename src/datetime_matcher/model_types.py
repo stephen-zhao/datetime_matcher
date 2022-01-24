@@ -7,6 +7,7 @@ DfregexTokenKindType = Literal[
     'OTHER_REGEX_CHAR',
 ]
 
+
 @dataclass
 class DfregexToken:
     kind: DfregexTokenKindType
@@ -36,14 +37,14 @@ SupportedDatetimeFormatCodeType = Literal[
     r'-S',
     r'f',
     r'z',
-    #TODO: %Z
+    # TODO: %Z
     r'j',
     r'-j',
     r'U',
     r'W',
-    #TODO: %c
-    #TODO: %x
-    #TODO: %X
+    # TODO: %c
+    # TODO: %x
+    # TODO: %X
 ]
 
 SUPPORTED_DATETIME_FORMAT_CODES: Tuple[SupportedDatetimeFormatCodeType, ...] = get_args(SupportedDatetimeFormatCodeType)

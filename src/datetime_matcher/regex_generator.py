@@ -11,10 +11,10 @@ class RegexGenerator():
 
     def __init__(self):
         # TODO generate these based on the locale at runtime of __init__, i.e. base the month names on specified language
-        self.weekdays = list(filter(lambda x: x != None and len(x) > 0, calendar.day_name))
-        self.weekdays_abbr = list(filter(lambda x: x != None and len(x) > 0, calendar.day_abbr))
-        self.months = list(filter(lambda x: x != None and len(x) > 0, calendar.month_name))
-        self.months_abbr = list(filter(lambda x: x != None and len(x) > 0, calendar.month_abbr))
+        self.weekdays = list(filter(lambda x: x is not None and len(x) > 0, calendar.day_name))
+        self.weekdays_abbr = list(filter(lambda x: x is not None and len(x) > 0, calendar.day_abbr))
+        self.months = list(filter(lambda x: x is not None and len(x) > 0, calendar.month_name))
+        self.months_abbr = list(filter(lambda x: x is not None and len(x) > 0, calendar.month_abbr))
         self.am_pm = [time(10).strftime('%p'), time(20).strftime('%p')]
         self.format_code_to_regex_map = {
             # In the order listed in python3 docs for datetime
@@ -40,24 +40,24 @@ class RegexGenerator():
             r'-S': r'[0-9]|[1-5][0-9]',
             r'f': r'[0-9]{6}',
             r'z': r'[\+\-](?:[01][0-9]|2[0-3])[0-5][0-9](?:[0-5][0-9](?:\.[0-9]{6})?)?',
-            #TODO: %Z
+            # TODO: %Z
             r'j': r'[0-2][0-9]{2}|3[0-5][0-9]|36[0-6]',
             r'-j': r'[0-9]|[1-9][0-9]|[1-2][0-9]{2}|3[0-5][0-9]|36[0-6]',
             r'U': r'[0-4][0-9]|5[0-3]',
             r'W': r'[0-4][0-9]|5[0-3]',
-            #TODO: %c
-            #TODO: %x
-            #TODO: %X
+            # TODO: %c
+            # TODO: %x
+            # TODO: %X
         }
 
     # public
     def generate_regex(self, tokens: Iterable[DfregexToken], is_capture_dfs: bool) -> str:
         """
-        Parse an iterable of DfregexTokens into a regex string that 
+        Parse an iterable of DfregexTokens into a regex string that
         corresponds with the original dfregex.
         """
         return ''.join(self.__generate_parts_from_dfregex_tokens(tokens, is_capture_dfs))
-    
+
     # private
     def __generate_parts_from_dfregex_tokens(self, tokens: Iterable[DfregexToken], is_capture_dfs: bool) -> Iterator[str]:
         """

@@ -140,16 +140,11 @@ $(ALL_INPUT_REQUIREMENTS_FILENAMES) &:
 
 .PHONY: lint
 lint: # Run all linters in check mode
-lint: isort flake8 mypy
+lint: isort flake8 mypy black
 
 .PHONY: fix-lint
 fix-lint: # Run all auto-fix linters
-fix-lint: isort-fix
-
-.PHONY: flake8
-flake8: # Run flake8 to check PEP style violations
-flake8: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
-	$(PY_IN_VENV_EXE) -m flake8 --config=setup.cfg $(package_dir)
+fix-lint: isort-fix black-fix
 
 .PHONY: isort
 isort: # Run isort to check sorting of imports
@@ -162,6 +157,23 @@ isort-fix: # Run isort to fix sorting of imports
 isort-fix: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 	$(PY_IN_VENV_EXE) -m isort $(package_dir)
 	$(PY_IN_VENV_EXE) -m isort $(test_dir)
+
+.PHONY: flake8
+flake8: # Run flake8 to check PEP style violations
+flake8: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
+	$(PY_IN_VENV_EXE) -m flake8 --config=setup.cfg $(package_dir)
+
+.PHONY: black
+black: # Run black to check PEP style violations
+black: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
+	$(PY_IN_VENV_EXE) -m black --diff --check -q --color $(package_dir)
+	$(PY_IN_VENV_EXE) -m black --diff --check -q --color $(tests_dir)
+
+.PHONY: black-fix
+black-fix: # Run black to fix PEP style violations
+black-fix: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
+	$(PY_IN_VENV_EXE) -m black -q --color $(package_dir)
+	$(PY_IN_VENV_EXE) -m black -q --color $(tests_dir)
 
 .PHONY: mypy
 mypy: # Run mypy type-checker

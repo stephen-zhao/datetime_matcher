@@ -49,7 +49,8 @@ init-piptools:
 	$(PIP_IN_VENV_EXE) install -U setuptools pip pip-tools wheel
 	@touch $(MARKER_PIPTOOLS)
 
-$(MARKER_PIPTOOLS):
+$(MARKER_PIPTOOLS): # If venv marker is newer, then re-init piptools
+$(MARKER_PIPTOOLS): $(MARKER_VENV)
 	make init-piptools
 
 

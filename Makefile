@@ -200,11 +200,11 @@ test: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 
 .PHONY: publish
 publish:
-	python3 -m twine upload dist/*
+	$(PY_IN_VENV_EXE) -m twine upload dist/*
 
 .PHONY: publish-test
 publish-test:
-	python3 -m twine upload --repository testpypi dist/*
+	$(PY_IN_VENV_EXE) -m twine upload --repository testpypi dist/*
 
 
 # ==================== Cleaning Up ====================

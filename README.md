@@ -134,8 +134,42 @@ ambiguous.
 
 ## Development
 
-This project has an extensive `Makefile` for development automation.
+This project has an extensive `Makefile` for development automation. To get started quick: after cloning this project, run `make all`. This should create a virtual environment, install all the required dev-time packages, lint, build, and test the project.
 
-After cloning this project, run `make all` to get started.
+### Virtual Environment Setup
 
-This should create a virtual environment and install all the required dev-time packages.
+You only have to run these once. And `make all` covers these steps automatically, but this is here for your reference.
+
+Use `make reinit-venv` to create a new virtual environment from scratch. This will live inside the project's root. All subsequent make commands will automatically invoke python from inside this virtual environment. You may rerun this to completely wipe the virtual environment and start from scratch.
+
+Use `make init-piptools` to bootstrap the virtual environment.
+
+### Dependency Management
+
+To add more runtime dependencies on pypi packages, add them to `requirements.in`. Then use `make install-requirements` to install them.
+
+To add more devtime dependencies (these will not be deemed dependencies in the distributable/built version of the package), add them to any `*.in` file within the `requirements-devtime.d/` directory. Then use `make install-requirements` to install them.
+
+To upgrade the pinned dependencies, run `make upgrade-requirements`. This will re-resolve the requirements to the latest versions, pin the newly resolved versions, and install them.
+
+### Building
+
+`make all` is the one-stop shop for building the project. It will fix auto-fixable linting errors, raise any additional linting errors, build, run unit tests, and produce a coverage report.
+
+To only check lints or fix lints, use `make lint` or `make fix-lint`.
+
+To only build, use `make build`.
+
+To only test, use `make test`.
+
+### Publishing
+
+Use `make publish-test` to publish to the test pypi repository.
+
+Use `make publish` to publish to the prod repository.
+
+### Cleaning
+
+Use `make clean` to remove build artifacts.
+
+Use `make reinit-venv` if you need to completely reset your virtual environment.

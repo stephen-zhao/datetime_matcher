@@ -2,12 +2,12 @@
 # Author: Stephen Zhao
 # Package: datetime_matcher
 # Version: v0.2
-# Last modified: 2022-01-22
+# Last modified: 2022-01-25
 # Description: A library which extends regex with support for datetime format codes.
 
 import re
 from datetime import datetime
-from typing import Iterable, Iterator, List, Match, Optional
+from typing import Iterator, List, Match, Optional
 
 from datetime_matcher.datetime_extractor import DatetimeExtractor
 from datetime_matcher.dfregex_lexer import DfregexLexer
@@ -48,13 +48,13 @@ class DatetimeMatcher:
     # public
     def extract_datetimes(
         self, dfregex: str, text: str, count: int = 0
-    ) -> Iterable[datetime]:
+    ) -> Iterator[datetime]:
         """
         Extracts the leftmost datetimes from text given a dfregex search string.
 
         Uses strftime codes within a dfregex search pattern to extract datetimes.
 
-        Returns an Iterable of datetime objects.
+        Returns an Iterator over datetime objects.
 
         Use a non-zero count to limit the number of extractions.
         """
@@ -140,8 +140,7 @@ class DatetimeMatcher:
     ) -> str:
         """
         Return the string obtained by replacing the leftmost non-overlapping occurrences of the pattern in string by the replacement repl.
-        repl can be either a string or a callable; if a string, backslash escapes in it are processed.
-        If it is a callable, it's passed the Match object and must return a replacement string to be used.
+        Backslash escapes in replacement are processed.
 
         Uses strftime codes within a dfregex search pattern to extract and substitute datetimes.
 

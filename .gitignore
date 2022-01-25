@@ -1,11 +1,19 @@
 # General build artifacts
 /build
 /dist
-/datetime_matcher.egg-info
-
-# Python
 __pycache__
-.pytest_cache
+**/*.egg-info
+
+# Virtual Env
+.venv
 
 # VS Code
 .vscode
+
+# Mypy
+.mypy_cache
+
+# Pytest
+.coverage
+.pytest_cache
+coverage.xml

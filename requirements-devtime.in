@@ -1,0 +1,18 @@
+# lint
+isort
+mypy
+flake8
+black
+
+# build
+build
+
+# test
+pytest
+pytest-cov
+
+# publish
+twine
+
+# self
+-e .

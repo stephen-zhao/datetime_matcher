@@ -1,0 +1,31 @@
+# ==================== Files to include in the sdist ====================
+
+# config for project's main runnable dev automations
+include Makefile
+
+# Minimum Build System spec (PEP-517/PEP-518)
+include pyproject.toml
+
+# This file, to specify what goes into the source distribution
+include MANIFEST.in
+
+# Setup for building the project's bdist
+include setup.cfg
+
+# Requirements for running the project
+include requirements.in
+
+# Requirements for running the build system and other dev tools
+include requirements-devtime.in
+
+# Project Files
+include LICENSE
+include README*
+
+# Typed marker (PEP-561)
+recursive-include src/ py.typed
+
+# Include test configuration
+include test/conftest.py
+
+prune .venv

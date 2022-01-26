@@ -1,4 +1,4 @@
-PY_EXE_PATH ?= $(shell which python3.9 || which python3.8 || which python3.7 || which python3.6 || which python3)
+PY_EXE_PATH ?= $(shell which python3.10 || which python3.9 || which python3.8 || which python3.7 || which python3.6 || which python3)
 PY_EXE := $(shell basename $(PY_EXE_PATH))
 
 VENV_DIR := .venv
@@ -58,8 +58,8 @@ $(MARKER_PIPTOOLS): $(MARKER_VENV)
 
 # Requirements input files
 INPUT_DISTTIME_REQUIREMENTS_FILENAME := requirements.in
-INPUT_DEVTIME_REQUIREMENTS_FILENAMES := $(wildcard requirements-devtime.d/*.in)
-ALL_INPUT_REQUIREMENTS_FILENAMES := $(INPUT_DISTTIME_REQUIREMENTS_FILENAME) $(INPUT_DEVTIME_REQUIREMENTS_FILENAMES)
+INPUT_DEVTIME_REQUIREMENTS_FILENAME := requirements-devtime.in
+ALL_INPUT_REQUIREMENTS_FILENAMES := $(INPUT_DISTTIME_REQUIREMENTS_FILENAME) $(INPUT_DEVTIME_REQUIREMENTS_FILENAME)
 
 # Resolve and then Sync requirements
 
@@ -179,7 +179,7 @@ black-fix: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 .PHONY: mypy
 mypy: # Run mypy type-checker
 mypy: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
-	$(PY_IN_VENV_EXE) -m mypy --config-file setup.cfg $(package_dir)
+	$(PY_IN_VENV_EXE) -m mypy --config-file setup.cfg --namespace-packages -p $(package)
 
 
 # ==================== Building ====================
@@ -193,17 +193,21 @@ build: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 
 .PHONY: test
 test: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
-	$(PY_IN_VENV_EXE) -m pytest --cov=. --cov-fail-under=$(coverage_percent) --cov-config=setup.cfg --cov-report=xml:coverage.xml --cov-report=term-missing --cov-branch $(package_dir) $(test_dir)
+	$(PY_IN_VENV_EXE) -m pytest --cov=src --cov-fail-under=$(coverage_percent) --cov-config=setup.cfg --cov-report=xml:coverage.xml --cov-report=term-missing --cov-branch $(package_dir) $(test_dir)
 
 
 # ==================== Publishing ====================
 
+.PHONY: pre-publish
+pre-publish:
+	$(PY_IN_VENV_EXE) -m twine check dist/*
+
 .PHONY: publish
-publish:
+publish: pre-publish
 	$(PY_IN_VENV_EXE) -m twine upload dist/*
 
 .PHONY: publish-test
-publish-test:
+publish-test: pre-publish
 	$(PY_IN_VENV_EXE) -m twine upload --repository testpypi dist/*
 
 

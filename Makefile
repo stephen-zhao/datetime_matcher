@@ -198,12 +198,16 @@ test: $(MARKER_REQUIREMENTS_SYNCED_DEVTIME)
 
 # ==================== Publishing ====================
 
+.PHONY: pre-publish
+pre-publish:
+	$(PY_IN_VENV_EXE) -m twine check dist/*
+
 .PHONY: publish
-publish:
+publish: pre-publish
 	$(PY_IN_VENV_EXE) -m twine upload dist/*
 
 .PHONY: publish-test
-publish-test:
+publish-test: pre-publish
 	$(PY_IN_VENV_EXE) -m twine upload --repository testpypi dist/*
 
 

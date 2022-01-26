@@ -1,0 +1,8 @@
+include LICENSE
+include MANIFEST.in
+include Makefile
+include README*
+include pyproject.toml
+include setup.cfg
+include requirements.in
+include requirements-devtime.in

@@ -3,7 +3,7 @@ name = "datetime-matcher"
 version = "0.2.1"
 description = "A library which extends regex with support for datetime format codes."
 readme = { file = "README.md", content-type = "text/markdown" }
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 dependencies = [
 ]
 classifiers = [
@@ -11,7 +11,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: OS Independent",
     "Topic :: Software Development :: Libraries :: Python Modules",

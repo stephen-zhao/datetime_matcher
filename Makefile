@@ -1,7 +1,7 @@
 
 .PHONY: all build publish publish-test clean test bump-version install-uv
 
-all: build
+all: build test
 
 # URL for the uv installer script.
 # This is defined as a variable so it can be pinned or overridden if needed.

@@ -1,6 +1,6 @@
 [project]
 name = "datetime-matcher"
-version = "0.2.2"
+version = "0.3.0"
 description = "A library which extends regex with support for datetime format codes."
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.9"
@@ -67,7 +67,7 @@ dev-dependencies = [
 ]
 
 [tool.bumpversion]
-current_version = "0.2.2"
+current_version = "0.3.0"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"

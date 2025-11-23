@@ -57,7 +57,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["src"]
-include = ["datetime_matcher.*"]
+include = ["datetime_matcher"]
 
 [tool.uv]
 dev-dependencies = [

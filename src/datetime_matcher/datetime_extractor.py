@@ -34,6 +34,15 @@ class DatetimeExtractor:
             yield match
 
     # private
+    @staticmethod
+    def __normalize_format_code(format_code: str) -> str:
+        """Strip the '-' modifier from format codes (e.g. '%-d' -> '%d') for
+        strptime compatibility. On some platforms (notably Linux CPython),
+        strptime does not accept the '-' modifier, but %d can already parse
+        non-zero-padded values."""
+        return format_code.replace("%-", "%")
+
+    # private
     def __parse_match_into_maybe_datetime(
         self, match: Match[str], df_tokens: List[DfregexToken]
     ) -> Optional[datetime]:
@@ -44,7 +53,9 @@ class DatetimeExtractor:
             if group_key.startswith("DF___"):
                 try:
                     datetime_group_num = int(group_key[5:])
-                    datetime_format_codes.append(df_tokens[datetime_group_num].value)
+                    datetime_format_codes.append(
+                        self.__normalize_format_code(df_tokens[datetime_group_num].value)
+                    )
                     datetime_string_values.append(group_value)
                 except Exception:
                     # Skip all problematic ones

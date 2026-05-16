@@ -10,8 +10,8 @@ on:
       - completed
 
 jobs:
-  pypi-publish:
-    name: Upload release to PyPI
+  check:
+    name: Check if there is a new release to publish
     runs-on: ubuntu-latest
     if: >-
       ${{
@@ -20,6 +20,40 @@ jobs:
          github.event.workflow_run.conclusion == 'success' &&
          !startsWith(github.event.workflow_run.head_commit.message, 'Bump version:'))
       }}
+    outputs:
+      should_publish: ${{ steps.decide.outputs.should_publish }}
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Decide whether to publish
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "Triggered by tag push; proceeding."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # workflow_run trigger: confirm Bump Version actually produced a new tag.
+          # If the bump step was skipped (e.g. bumpversion=none label), no new tag
+          # was pushed and there is nothing to publish.
+          TAG=$(git tag --points-at HEAD --list 'v*' | head -n 1)
+          if [ -z "$TAG" ]; then
+            echo "No v* tag on main HEAD; Bump Version did not produce a release. Skipping."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found tag $TAG on main HEAD; proceeding to publish."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  pypi-publish:
+    name: Upload release to PyPI
+    needs: check
+    if: needs.check.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing

@@ -8,6 +8,7 @@ on:
     workflows: ["Bump Version"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   check:
@@ -15,6 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       ${{
+        github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
         (github.event_name == 'workflow_run' &&
          github.event.workflow_run.conclusion == 'success' &&
@@ -32,8 +34,8 @@ jobs:
       - name: Decide whether to publish
         id: decide
         run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            echo "Triggered by tag push; proceeding."
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Triggered by ${{ github.event_name }}; proceeding."
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi

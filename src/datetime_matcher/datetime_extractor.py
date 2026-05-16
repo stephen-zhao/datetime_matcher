@@ -4,6 +4,14 @@ from typing import Iterable, List, Match, Optional
 
 from datetime_matcher.model_types import DfregexToken
 
+_MINUS_MODIFIER_RE = re.compile(r"%-([dmbHIMSjw])")
+
+
+def _normalize_format_code(format_code: str) -> str:
+    """Strip the '-' modifier from format codes (e.g. '%-d' -> '%d') for
+    strptime compatibility on platforms where it is not supported."""
+    return _MINUS_MODIFIER_RE.sub(r"%\1", format_code)
+
 
 class DatetimeExtractor:
 
@@ -34,15 +42,6 @@ class DatetimeExtractor:
             yield match
 
     # private
-    @staticmethod
-    def __normalize_format_code(format_code: str) -> str:
-        """Strip the '-' modifier from format codes (e.g. '%-d' -> '%d') for
-        strptime compatibility. On some platforms (notably Linux CPython),
-        strptime does not accept the '-' modifier, but %d can already parse
-        non-zero-padded values."""
-        return format_code.replace("%-", "%")
-
-    # private
     def __parse_match_into_maybe_datetime(
         self, match: Match[str], df_tokens: List[DfregexToken]
     ) -> Optional[datetime]:
@@ -54,7 +53,7 @@ class DatetimeExtractor:
                 try:
                     datetime_group_num = int(group_key[5:])
                     datetime_format_codes.append(
-                        self.__normalize_format_code(df_tokens[datetime_group_num].value)
+                        _normalize_format_code(df_tokens[datetime_group_num].value)
                     )
                     datetime_string_values.append(group_value)
                 except Exception:

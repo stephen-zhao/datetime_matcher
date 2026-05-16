@@ -2,7 +2,24 @@ from datetime import datetime
 
 import pytest
 
-from datetime_matcher.datetime_extractor import DatetimeExtractor
+from datetime_matcher.datetime_extractor import DatetimeExtractor, _normalize_format_code
+
+
+@pytest.mark.parametrize('format_code,expected', [
+    (r'%d', r'%d'),
+    (r'%-d', r'%d'),
+    (r'%-m', r'%m'),
+    (r'%-H', r'%H'),
+    (r'%-I', r'%I'),
+    (r'%-M', r'%M'),
+    (r'%-S', r'%S'),
+    (r'%-j', r'%j'),
+    (r'%Y', r'%Y'),
+    (r'%b', r'%b'),
+    (r'%A', r'%A'),
+])
+def test_normalize_format_code(format_code, expected):
+    assert _normalize_format_code(format_code) == expected
 
 
 @pytest.mark.parametrize('text_in,expected_out_first', [

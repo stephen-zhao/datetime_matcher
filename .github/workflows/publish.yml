@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       ${{
-        github.event_name == 'push' ||
+        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
         (github.event_name == 'workflow_run' &&
          github.event.workflow_run.conclusion == 'success' &&
          !startsWith(github.event.workflow_run.head_commit.message, 'Bump version:'))
@@ -48,7 +48,7 @@ jobs:
           if [ "${{ github.event_name }}" = "push" ]; then
             TAG="${{ github.ref_name }}"
           else
-            TAG=$(git describe --tags --abbrev=0)
+            TAG=$(git describe --tags --abbrev=0 --match 'v*')
           fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Resolved tag: $TAG"

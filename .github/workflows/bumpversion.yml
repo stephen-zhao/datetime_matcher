@@ -99,7 +99,11 @@ jobs:
           
           echo "PR Labels found: $PR_LABELS"
 
-          if echo "$PR_LABELS" | grep -q "bumpversion=major"; then
+          if echo "$PR_LABELS" | grep -q "bumpversion=none"; then
+            echo "part=none" >> $GITHUB_OUTPUT
+            echo "Detected label bumpversion=none, skipping bump"
+            exit 0
+          elif echo "$PR_LABELS" | grep -q "bumpversion=major"; then
             echo "part=major" >> $GITHUB_OUTPUT
             echo "Detected label bumpversion=major"
             exit 0
@@ -135,6 +139,7 @@ jobs:
           fi
 
       - name: Bump Version
+        if: ${{ steps.bump_part.outputs.part != 'none' }}
         run: |
           # Checkout main branch to ensure we are on the branch we want to push to
           git checkout main

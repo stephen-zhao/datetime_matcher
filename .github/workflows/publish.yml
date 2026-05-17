@@ -8,18 +8,64 @@ on:
     workflows: ["Bump Version"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
-  pypi-publish:
-    name: Upload release to PyPI
+  check:
+    name: Check if there is a new release to publish
     runs-on: ubuntu-latest
     if: >-
       ${{
+        github.event_name == 'workflow_dispatch' ||
         (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
         (github.event_name == 'workflow_run' &&
          github.event.workflow_run.conclusion == 'success' &&
          !startsWith(github.event.workflow_run.head_commit.message, 'Bump version:'))
       }}
+    outputs:
+      should_publish: ${{ steps.decide.outputs.should_publish }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
+          fetch-depth: 0
+
+      - name: Decide whether to publish
+        id: decide
+        run: |
+          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Triggered by ${{ github.event_name }}; proceeding."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # workflow_run trigger: look for a v* tag on any commit that is a
+          # descendant of the triggering commit and reachable from origin/main.
+          # A tag pushed by Bump Version during this run falls in that range.
+          # Anchoring to head_sha (not main HEAD) avoids a race where a later
+          # workflow_run would see an earlier run's tag and republish.
+          git fetch origin main --tags --quiet
+          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
+          NEW_TAG=$(
+            git rev-list "$HEAD_SHA..origin/main" 2>/dev/null |
+            while read sha; do
+              git tag --points-at "$sha" --list 'v*'
+            done |
+            head -n 1
+          )
+          if [ -z "$NEW_TAG" ]; then
+            echo "No new v* tag since $HEAD_SHA; Bump Version did not produce a release. Skipping publish."
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found new tag $NEW_TAG since $HEAD_SHA; proceeding to publish."
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  pypi-publish:
+    name: Upload release to PyPI
+    needs: check
+    if: needs.check.outputs.should_publish == 'true'
+    runs-on: ubuntu-latest
     environment: pypi
     permissions:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing

@@ -32,7 +32,6 @@ jobs:
         id: bump_part
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COMMITS_JSON: ${{ toJson(github.event.commits) }}
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%B)
           echo "Commit message: $COMMIT_MSG"
@@ -117,26 +116,15 @@ jobs:
             exit 0
           fi
 
-          # Dump commits to a file to search through all messages
-          # We use an environment variable and printf to avoid shell injection issues
-          # with special characters in commit messages (e.g. single quotes)
-          printf "%s" "$COMMITS_JSON" > commits.json
-          
-          # Extract messages using jq (installed on ubuntu-latest)
-          # Check for tags in priority order: major > minor > patch
-          if jq -r '.[].message' commits.json | grep -q "#major"; then
-            echo "part=major" >> $GITHUB_OUTPUT
-            echo "Detected #major"
-          elif jq -r '.[].message' commits.json | grep -q "#minor"; then
-            echo "part=minor" >> $GITHUB_OUTPUT
-            echo "Detected #minor"
-          elif jq -r '.[].message' commits.json | grep -q "#patch"; then
-            echo "part=patch" >> $GITHUB_OUTPUT
-            echo "Detected #patch"
-          else
-            echo "part=patch" >> $GITHUB_OUTPUT
-            echo "No tag detected, defaulting to patch"
-          fi
+          # Anything that arrives without a label is a patch. There is
+          # deliberately no way to ask for a larger bump from inside a commit
+          # message: message text is written by whoever authored the commit,
+          # it is not what a reviewer reads, and it travels with the branch
+          # into main. A label has to be applied by someone with write access
+          # to this repository, which is the trust boundary the version number
+          # should sit behind.
+          echo "part=patch" >> $GITHUB_OUTPUT
+          echo "No bumpversion=* label on the pull request, defaulting to patch"
 
       - name: Bump Version
         if: ${{ steps.bump_part.outputs.part != 'none' }}

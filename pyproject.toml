@@ -104,6 +104,9 @@ source = ["datetime_matcher"]
 branch = true
 
 [tool.coverage.report]
+# Minimum total coverage; `pytest --cov` (and so CI) fails below it. Set to
+# the current level as a ratchet: raise it as coverage improves, never lower it.
+fail_under = 84
 show_missing = true
 skip_covered = true
 exclude_also = [

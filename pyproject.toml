@@ -68,6 +68,7 @@ include = ["datetime_matcher"]
 dev-dependencies = [
     "bump-my-version>=1.2.1",
     "pytest>=8.4.1",
+    "pytest-cov>=5.0",
     "uv>=0.8.11",
 ]
 
@@ -92,3 +93,30 @@ commit_args = ""
 setup_hooks = []
 pre_commit_hooks = []
 post_commit_hooks = []
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+
+# Coverage is opt-in per run (`make test-coverage`, or `pytest --cov`) so a plain
+# `pytest` stays fast. CI runs it with the same flags.
+[tool.coverage.run]
+source = ["datetime_matcher"]
+branch = true
+
+[tool.coverage.report]
+# Minimum total coverage; `pytest --cov` (and so CI) fails below it. Set to
+# the current level as a ratchet: raise it as coverage improves, never lower it.
+fail_under = 84
+show_missing = true
+skip_covered = true
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

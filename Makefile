@@ -1,5 +1,5 @@
 
-.PHONY: all build publish publish-test clean test bump-version install-uv
+.PHONY: all build publish publish-test clean test test-coverage bump-version install-uv
 
 all: build test
 
@@ -23,6 +23,9 @@ install-uv:
 test:
 	uv run pytest -s
 
+test-coverage:
+	uv run pytest --cov --cov-report=term --cov-report=xml --cov-report=html
+
 build:
 	uv build
 
@@ -33,7 +36,7 @@ publish-test:
 	uv publish --repository testpypi
 
 clean:
-	rm -rf ./build ./*.egg-info ./dist
+	rm -rf ./build ./*.egg-info ./dist ./htmlcov ./coverage.xml ./.coverage
 
 bump-version:
 	uv run --frozen bump-my-version bump $(PART)

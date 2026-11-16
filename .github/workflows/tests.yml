@@ -1,0 +1,85 @@
+# Generic pytest + coverage gate for uv-managed Python repositories.
+#
+# Per-repo behaviour lives in pyproject.toml, not here:
+#   - Python version:   requires-python / .python-version (uv picks it)
+#   - test paths/flags: [tool.pytest.ini_options]
+#   - what is measured: [tool.coverage.run] source (falls back to the repo root)
+#   - minimum coverage: [tool.coverage.report] fail_under (fails this job)
+# pytest-cov is supplied with `uv run --with`, so a repo need not declare it.
+
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    name: pytest
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # sticky coverage comment on PRs
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Install project and dev dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Run pytest with coverage
+        run: >-
+          uv run --with pytest-cov pytest
+          --cov
+          --cov-report=term
+          --cov-report=xml:coverage.xml
+          --cov-report=html:htmlcov
+          --junitxml=pytest-results.xml
+
+      - name: Write coverage summary
+        if: ${{ !cancelled() && hashFiles('.coverage') != '' }}
+        run: |
+          TOTAL=$(uv run --with pytest-cov coverage report --format=total --fail-under=0)
+          {
+            echo "## Coverage: ${TOTAL}%"
+            echo
+            uv run --with pytest-cov coverage report --format=markdown --fail-under=0
+          } > coverage-summary.md
+          cat coverage-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: ${{ !cancelled() && hashFiles('.coverage') != '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.xml
+            htmlcov/
+            pytest-results.xml
+          if-no-files-found: ignore
+
+      # Fork PRs get a read-only token, so only comment on same-repo PRs.
+      - name: Comment coverage on pull request
+        if: >-
+          ${{ !cancelled() &&
+              github.event_name == 'pull_request' &&
+              github.event.pull_request.head.repo.full_name == github.repository &&
+              hashFiles('coverage-summary.md') != '' }}
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage
+          path: coverage-summary.md

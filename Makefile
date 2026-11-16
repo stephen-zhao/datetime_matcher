@@ -23,7 +23,6 @@ install-uv:
 test:
 	uv run pytest -s
 
-# Terminal summary plus coverage.xml and htmlcov/ (settings in pyproject.toml).
 test-coverage:
 	uv run pytest --cov --cov-report=term --cov-report=xml --cov-report=html
 

@@ -1,70 +1,165 @@
 name: Publish to PyPI
 
+# Publishing is deliberately hard to trigger, and every path into it names one
+# exact tag:
+#
+#   1. workflow_dispatch, with a required `tag` input - a human names the one
+#      tag to publish. No default, no glob, no list, no "latest".
+#   2. workflow_run after Bump Version, and only when that run produced a
+#      version-bump commit carrying exactly one new v* tag.
+#
+# There is deliberately no `push: tags` trigger: a tag reaching origin, by hand
+# or swept along by `push.followTags` from a clone holding a stale one, must
+# never publish on its own.
+
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The one existing tag to publish, e.g. v0.2.4. Exact name only - no globs, no lists."
+        required: true
+        type: string
   workflow_run:
     workflows: ["Bump Version"]
     types:
       - completed
-  workflow_dispatch:
 
 jobs:
-  check:
-    name: Check if there is a new release to publish
+  resolve:
+    name: Resolve the single tag to publish
     runs-on: ubuntu-latest
     if: >-
       ${{
         github.event_name == 'workflow_dispatch' ||
-        (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
         (github.event_name == 'workflow_run' &&
          github.event.workflow_run.conclusion == 'success' &&
          !startsWith(github.event.workflow_run.head_commit.message, 'Bump version:'))
       }}
     outputs:
       should_publish: ${{ steps.decide.outputs.should_publish }}
+      tag: ${{ steps.decide.outputs.tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.ref }}
           fetch-depth: 0
 
-      - name: Decide whether to publish
+      - name: Resolve and validate the tag
         id: decide
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          if [ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Triggered by ${{ github.event_name }}; proceeding."
+          set -euo pipefail
+          git fetch --force --tags --quiet origin
+
+          # The version a tag's own tree declares.
+          version_at_tag() {
+            git show "refs/tags/$1:pyproject.toml" |
+              sed -n 's/^current_version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' |
+              head -n 1
+          }
+
+          # A tag must agree with the tree it points at, or one of the two is
+          # lying about what is being shipped.
+          assert_tag_matches_tree() {
+            declared="$(version_at_tag "$1")"
+            if [ -z "$declared" ]; then
+              echo "::error::$1 has no current_version in pyproject.toml; refusing to publish."
+              exit 1
+            fi
+            if [ "$1" != "v$declared" ]; then
+              echo "::error::$1 disagrees with its own tree: pyproject declares $declared, so the tag should be v$declared. Refusing to publish."
+              exit 1
+            fi
+          }
+
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"
+
+            # One tag, named exactly. Anything that could mean "more than one"
+            # or "whichever matches" is rejected rather than interpreted.
+            case "$TAG" in
+              "")
+                echo "::error::No tag given. Name the exact tag to publish."
+                exit 1 ;;
+              *[[:space:]]*)
+                echo "::error::'$TAG' contains whitespace. Name exactly one tag."
+                exit 1 ;;
+              *,*)
+                echo "::error::'$TAG' looks like a list. Name exactly one tag."
+                exit 1 ;;
+              *'*'*|*'?'*|*'['*|*']'*)
+                echo "::error::'$TAG' contains glob characters. Name one exact tag, not a pattern."
+                exit 1 ;;
+            esac
+
+            if ! printf '%s' "$TAG" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::'$TAG' is not a vX.Y.Z tag name."
+              exit 1
+            fi
+
+            if ! git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+              echo "::error::Tag '$TAG' does not exist on origin. Publishing never creates a tag; push the release tag first."
+              exit 1
+            fi
+
+            assert_tag_matches_tree "$TAG"
+            echo "Manual publish of $TAG, named explicitly."
+            echo "tag=$TAG" >> "$GITHUB_OUTPUT"
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          # workflow_run trigger: look for a v* tag on any commit that is a
-          # descendant of the triggering commit and reachable from origin/main.
-          # A tag pushed by Bump Version during this run falls in that range.
-          # Anchoring to head_sha (not main HEAD) avoids a race where a later
-          # workflow_run would see an earlier run's tag and republish.
-          git fetch origin main --tags --quiet
-          HEAD_SHA="${{ github.event.workflow_run.head_sha }}"
-          NEW_TAG=$(
-            git rev-list "$HEAD_SHA..origin/main" 2>/dev/null |
-            while read sha; do
-              git tag --points-at "$sha" --list 'v*'
-            done |
-            head -n 1
-          )
-          if [ -z "$NEW_TAG" ]; then
-            echo "No new v* tag since $HEAD_SHA; Bump Version did not produce a release. Skipping publish."
+
+          # workflow_run: the only automatic path, and it publishes solely the
+          # tag that this Bump Version run just created. Anchoring to the
+          # triggering commit rather than main's tip keeps a later run from
+          # re-publishing an earlier run's tag.
+          git fetch --quiet origin main
+          TAGS="$(
+            git rev-list "$RUN_HEAD_SHA..origin/main" |
+              while read -r sha; do
+                git tag --points-at "$sha" --list 'v*'
+              done |
+              sort -u
+          )"
+          COUNT="$(printf '%s' "$TAGS" | grep -c . || true)"
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Bump Version added no v* tag above $RUN_HEAD_SHA; there is no release to publish."
             echo "should_publish=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Found new tag $NEW_TAG since $HEAD_SHA; proceeding to publish."
-            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+
+          if [ "$COUNT" -gt 1 ]; then
+            echo "::error::$COUNT new v* tags above $RUN_HEAD_SHA - refusing to guess which one to publish:"
+            printf '::error::  %s\n' $TAGS
+            echo "::error::Publish the intended one with workflow_dispatch."
+            exit 1
+          fi
+
+          TAG="$TAGS"
+
+          # The tag has to sit on a bump commit. Anything else in that range
+          # carrying a v* tag is not a release this workflow made.
+          SUBJECT="$(git log -1 --format=%s "refs/tags/$TAG^{commit}")"
+          case "$SUBJECT" in
+            "Bump version: "*) : ;;
+            *)
+              echo "::error::$TAG does not point at a version-bump commit (subject: $SUBJECT). Refusing to publish."
+              exit 1 ;;
+          esac
+
+          assert_tag_matches_tree "$TAG"
+          echo "Bump Version produced $TAG; publishing it."
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
 
   pypi-publish:
     name: Upload release to PyPI
-    needs: check
-    if: needs.check.outputs.should_publish == 'true'
+    needs: resolve
+    if: needs.resolve.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:
@@ -72,9 +167,12 @@ jobs:
       contents: write  # required for creating GitHub releases
 
     steps:
-      - name: Checkout code
+      # The one tag `resolve` settled on - never github.ref, and never a tag
+      # guessed at build time.
+      - name: Checkout ${{ needs.resolve.outputs.tag }}
         uses: actions/checkout@v4
         with:
+          ref: refs/tags/${{ needs.resolve.outputs.tag }}
           fetch-depth: 0
 
       - name: Install uv
@@ -85,25 +183,31 @@ jobs:
       - name: Build package
         run: uv build
 
+      - name: Check the built artifacts carry the tag's version
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          set -euo pipefail
+          EXPECTED="${TAG#v}"
+          ls -1 dist/
+          for f in dist/*; do
+            case "$(basename "$f")" in
+              *"-$EXPECTED-"*|*"-$EXPECTED".*) : ;;
+              *)
+                echo "::error::dist/$(basename "$f") is not version $EXPECTED; refusing to upload."
+                exit 1 ;;
+            esac
+          done
+          echo "All artifacts are version $EXPECTED."
+
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-
-      - name: Resolve tag
-        id: tag
-        run: |
-          if [ "${{ github.event_name }}" = "push" ]; then
-            TAG="${{ github.ref_name }}"
-          else
-            TAG=$(git describe --tags --abbrev=0 --match 'v*')
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Resolved tag: $TAG"
 
       - name: Create GitHub pre-release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          name: ${{ steps.tag.outputs.tag }}
+          tag_name: ${{ needs.resolve.outputs.tag }}
+          name: ${{ needs.resolve.outputs.tag }}
           prerelease: true
           generate_release_notes: true
           files: dist/*
